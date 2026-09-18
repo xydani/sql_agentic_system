@@ -160,3 +160,20 @@ def test_transcript_shows_question_steps_and_answer():
     assert "called run_select" in transcript
     assert "returned: 1\n(1 rows)" in transcript
     assert "PROPOSED ANSWER: There is 1." in transcript
+
+
+def test_sql_error_is_fed_back_to_the_agent():
+    broken = AIMessage("", tool_calls=[
+        {"name": "run_select", "args": {"sql": "SELECT * FROM custmoer"}, "id": "bad"}])
+    fixed = AIMessage("", tool_calls=[
+        {"name": "run_select", "args": {"sql": "SELECT name FROM customers"}, "id": "good"}])
+    model = ScriptedModel([broken, fixed, AIMessage("Alice, Bob and Chen.")], [approved()])
+
+    graph = build_graph(EXAMPLE_DB, model=model)
+    answer_question(graph, "Who are the customers?", thread_id="selfcorrect")
+
+    history = graph.get_state({"configurable": {"thread_id": "selfcorrect"}}).values["messages"]
+    errors = [m.content for m in history if m.type == "tool" and "failed" in m.content]
+    assert errors and "no such table: custmoer" in errors[0]
+    assert any(m.type == "tool" and "Alice Rossi" in m.content for m in history)
+    assert model.agent.calls == 3
