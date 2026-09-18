@@ -140,10 +140,44 @@ sql_agent/
   _db_worker.py     the isolated child process
 legacy/
   nl2sql_agent.py   the original pipeline, kept for --compare
-data/example.db
+data/
+  example.db            2 tables, 7 rows - the minimal demo case
+  shop.db               4 tables, ~1500 rows - the realistic one
+  generate_shop_db.py   rebuilds shop.db, seeded and deterministic
 tests/
 main.py
 ```
+
+## The two databases
+
+`example.db` is the original toy database and the default. It is small enough
+that the whole schema fits in one glance, which is what makes the comparison
+above easy to follow.
+
+`shop.db` is a normalised shop: customers, products, orders and order items.
+It exists because a system that only ever answers correctly on seven rows has
+not really been tested. It is generated from a fixed seed, so it rebuilds
+byte-for-byte identical:
+
+```bash
+python data/generate_shop_db.py
+python main.py --db data/shop.db "What is the total revenue excluding cancelled orders?"
+```
+
+It deliberately contains the things that break naive text-to-SQL:
+
+| Trap | Why it matters |
+|---|---|
+| `country` holds `IT`, not `Italy` | filtering on a guessed literal returns a silent zero |
+| `status` holds `D`, `S`, `P`, `X` | the same trap, on a column whose meaning must be inferred |
+| `email` and `shipped_date` are nullable | `COUNT(column)` and `COUNT(*)` disagree |
+| `name` exists in two tables | joins have to qualify it |
+| `unit_price` exists in `products` **and** `order_items` | revenue must use the price recorded on the item, not the current one |
+| ~1500 rows | results get truncated, so a sample must not be counted as a total |
+
+The agent answers all of these correctly, including total revenue, which needs
+a join across three tables, an exclusion of cancelled orders and the historical
+price rather than the current one.
 
 ## Safety
 
@@ -169,6 +203,6 @@ a complete result and counted.
 python -m pytest tests/ -q
 ```
 
-105 tests, no API key needed. The graph is exercised with a scripted model, so
+113 tests, no API key needed. The graph is exercised with a scripted model, so
 approval, rejection, revision caps, thread isolation and SQL self-correction
 are all verified offline and deterministically.
