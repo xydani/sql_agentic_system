@@ -23,7 +23,7 @@ PROVIDERS = {
     },
     "gemini": {
         "backend": "google_genai",
-        "model": "gemini-3.8-flash",
+        "model": "gemini-3.1-flash-lite",
         "key": "GOOGLE_API_KEY",
         "console": "https://aistudio.google.com/apikey",
     },
