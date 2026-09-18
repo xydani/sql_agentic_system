@@ -17,7 +17,7 @@ load_dotenv()
 PROVIDERS = {
     "groq": {
         "backend": "groq",
-        "model": "llama-3.3-70b-versatile",
+        "model": "openai/gpt-oss-120b",
         "key": "GROQ_API_KEY",
         "console": "https://console.groq.com/keys",
     },
@@ -64,4 +64,4 @@ def describe_active_llm() -> str:
 
 if __name__ == "__main__":
     print(f"Provider: {describe_active_llm()}")
-    print(get_llm().invoke("Reply with exactly: ok").text())
+    print(get_llm().invoke("Reply with exactly: ok").text)
