@@ -20,7 +20,7 @@ from groq import Groq
 # for SQL generation. Swap for "llama-3.1-8b-instant" for a faster/
 # lower-quality option, or "openai/gpt-oss-120b" for a stronger one -
 # check console.groq.com for current free-tier limits per model.
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "qwen/qwen3.8-27b"
 
 SYSTEM_PROMPT = """You are a careful SQL generation agent for a SQLite database.
 
@@ -64,7 +64,6 @@ class NL2SQLAgent:
         return self._call()
 
     def _call(self) -> str:
-        print(f"\nPrompt: {(self.history)} to Groq API...")
         response = self.client.chat.completions.create(
             model=self.model,
             max_tokens=1024,
