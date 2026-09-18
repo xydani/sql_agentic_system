@@ -38,38 +38,27 @@ _ALLOWED_FIRST_KEYWORDS = ("SELECT", "WITH")
 _TOP_LEVEL_WRITE_VERBS = re.compile(r"\b(DELETE|UPDATE|INSERT|REPLACE)\b", re.IGNORECASE)
 
 
+_LINE_COMMENT = r"--[^\n]*"
+_BLOCK_COMMENT = r"/\*.*?(?:\*/|$)"
+_SINGLE_QUOTED = r"'(?:[^']|'')*'?"
+_DOUBLE_QUOTED = r'"(?:[^"]|"")*"?'
+_BACKTICKED = r"`(?:[^`]|``)*`?"
+_BRACKETED = r"\[[^\]]*\]?"
+
+_NOISE = re.compile("|".join((
+    _LINE_COMMENT,
+    _BLOCK_COMMENT,
+    _SINGLE_QUOTED,
+    _DOUBLE_QUOTED,
+    _BACKTICKED,
+    _BRACKETED,
+)), re.DOTALL)
+
+_PLACEHOLDER = {"-": " ", "/": " ", "'": "''", '"': '""', "`": "``", "[": "[]"}
+
+
 def _skeleton(sql: str) -> str:
-    out: list[str] = []
-    i, n = 0, len(sql)
-    while i < n:
-        ch = sql[i]
-        nxt = sql[i + 1] if i + 1 < n else ""
-        if ch == "-" and nxt == "-":
-            j = sql.find("\n", i)
-            i = n if j == -1 else j
-        elif ch == "/" and nxt == "*":
-            j = sql.find("*/", i + 2)
-            out.append(" ")
-            i = n if j == -1 else j + 2
-        elif ch in ("'", '"', "`"):
-            j = i + 1
-            while j < n:
-                if sql[j] == ch:
-                    if j + 1 < n and sql[j + 1] == ch:
-                        j += 2
-                        continue
-                    break
-                j += 1
-            out.append(ch + ch)
-            i = j + 1
-        elif ch == "[":
-            j = sql.find("]", i)
-            out.append("[]")
-            i = n if j == -1 else j + 1
-        else:
-            out.append(ch)
-            i += 1
-    return "".join(out)
+    return _NOISE.sub(lambda m: _PLACEHOLDER[m.group()[0]], sql)
 
 
 def _top_level(skeleton: str) -> str:
