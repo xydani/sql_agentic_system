@@ -2,7 +2,7 @@ import sqlite3
 
 import pytest
 
-from db_executor import execute_sql, validate_read_only
+from db_executor import _skeleton, execute_sql, validate_read_only
 
 ACCEPTED = [
     "SELECT * FROM customers",
@@ -58,6 +58,28 @@ def test_rejects_writes_and_tricks(sql):
 def test_rejection_reason_tells_the_llm_what_to_do():
     reason = validate_read_only("DROP TABLE customers")
     assert "DROP" in reason and "SELECT" in reason
+
+
+@pytest.mark.parametrize("sql", [
+    "SELECT 'unterminated; DROP TABLE customers",
+    'SELECT "unterminated; DROP TABLE customers',
+    "SELECT `unterminated; DROP TABLE customers",
+    "SELECT [unterminated; DROP TABLE customers",
+    "SELECT * FROM t /* unterminated; DROP TABLE customers",
+])
+def test_unterminated_delimiter_swallows_to_end(sql):
+    assert ";" not in _skeleton(sql)
+
+
+@pytest.mark.parametrize("sql,expected", [
+    ("SELECT a-b FROM t", "SELECT a-b FROM t"),
+    ("SELECT a/b FROM t", "SELECT a/b FROM t"),
+    ("SELECT 'a' || 'b' FROM t", "SELECT '' || '' FROM t"),
+    ("SELECT 'it''s' FROM t", "SELECT '' FROM t"),
+    ('SELECT "a""b" FROM t', 'SELECT "" FROM t'),
+])
+def test_skeleton_preserves_structure(sql, expected):
+    assert _skeleton(sql) == expected
 
 
 @pytest.fixture
