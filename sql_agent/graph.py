@@ -82,16 +82,22 @@ class AgentState(TypedDict):
 
 
 def build_graph(db_path: str, model=None, max_revisions: int = MAX_REVISIONS):
-    model = model or get_llm()
     tools = build_tools(db_path)
-    agent_model = model.bind_tools(tools)
+
+    def chat_model():
+        nonlocal model
+        if model is None:
+            model = get_llm()
+        return model
 
     def run_agent(state: AgentState) -> dict:
-        reply = agent_model.invoke([SystemMessage(AGENT_PROMPT)] + state["messages"])
+        reply = chat_model().bind_tools(tools).invoke(
+            [SystemMessage(AGENT_PROMPT)] + state["messages"]
+        )
         return {"messages": [reply]}
 
     def verify_answer(state: AgentState) -> dict:
-        review = model.invoke(
+        review = chat_model().invoke(
             [SystemMessage(VERIFIER_PROMPT), HumanMessage(render_transcript(state["messages"]))]
         )
         verification = parse_verification(review.text)
