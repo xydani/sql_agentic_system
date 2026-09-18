@@ -1,3 +1,5 @@
+import re
+
 from langchain.tools import tool
 
 from sql_agent.db_executor import execute_sql
@@ -30,6 +32,26 @@ RUN_SELECT_DESCRIPTION = (
     "If the query fails, the exact database error is returned, so you can "
     "correct the query and try again."
 )
+
+
+STRING_LITERAL = re.compile(r"'((?:[^']|'')*)'")
+
+
+def find_string_literals(sql: str) -> list[str]:
+    return [match.group(1).replace("''", "'") for match in STRING_LITERAL.finditer(sql)]
+
+
+def describe_empty_result(sql: str) -> str:
+    literals = sorted(set(find_string_literals(sql)))
+    if not literals:
+        return "No rows returned."
+    values = ", ".join(repr(value) for value in literals)
+    return (
+        f"No rows returned. This query filters on the literal value(s) {values}. "
+        "An empty result looks the same whether nothing matches or the filter value "
+        "is simply not written that way in the data. Use sample_rows to check how the "
+        "column is actually written before reporting this as a finding."
+    )
 
 
 def format_table(columns: list[str], rows: list, truncated: bool = False) -> str:
@@ -84,6 +106,8 @@ def build_tools(db_path: str) -> list:
         result = execute_sql(db_path, sql)
         if not result.success:
             return f"Query failed: {result.error}"
+        if not result.rows:
+            return describe_empty_result(sql)
         return format_table(result.columns, result.rows, result.truncated)
 
     return [list_tables, describe_table, sample_rows, run_select]

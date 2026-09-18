@@ -1,6 +1,6 @@
 import pytest
 
-from sql_agent.tools import build_tools, format_table
+from sql_agent.tools import build_tools, describe_empty_result, find_string_literals, format_table
 
 EXAMPLE_DB = "data/example.db"
 
@@ -62,9 +62,31 @@ def test_run_select_refuses_writes(tools):
     assert tools["list_tables"].invoke({}) == "customers\norders"
 
 
-def test_run_select_on_empty_result(tools):
+def test_empty_result_from_a_guessed_literal_is_flagged(tools):
     output = tools["run_select"].invoke({"sql": "SELECT * FROM customers WHERE country = 'Italy'"})
+    assert "No rows returned" in output
+    assert "'Italy'" in output
+    assert "sample_rows" in output
+
+
+def test_empty_result_without_literals_is_plain(tools):
+    output = tools["run_select"].invoke({"sql": "SELECT * FROM orders WHERE amount > 9999"})
     assert output == "No rows returned."
+
+
+@pytest.mark.parametrize("sql,expected", [
+    ("SELECT * FROM t WHERE c = 'IT'", ["IT"]),
+    ("SELECT * FROM t WHERE a = 'x' AND b = 'y'", ["x", "y"]),
+    ("SELECT * FROM t WHERE c = 'it''s'", ["it's"]),
+    ("SELECT * FROM t WHERE n > 5", []),
+])
+def test_find_string_literals(sql, expected):
+    assert find_string_literals(sql) == expected
+
+
+def test_empty_result_lists_each_literal_once():
+    output = describe_empty_result("SELECT * FROM t WHERE a = 'IT' OR b = 'IT'")
+    assert output.count("'IT'") == 1
 
 
 def test_format_table_warns_when_truncated():
