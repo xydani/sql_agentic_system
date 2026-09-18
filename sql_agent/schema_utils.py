@@ -18,6 +18,10 @@ def _connect(db_path: str) -> sqlite3.Connection:
     return sqlite3.connect(uri, uri=True)
 
 
+def quote_identifier(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
 def list_table_names(db_path: str) -> list[str]:
     conn = _connect(db_path)
     try:
@@ -32,7 +36,7 @@ def describe_single_table(db_path: str, table: str) -> str:
     if table not in tables:
         raise ValueError(f"No such table: {table}. Available tables: {', '.join(tables)}")
 
-    quoted = '"' + table.replace('"', '""') + '"'
+    quoted = quote_identifier(table)
     conn = _connect(db_path)
     try:
         cur = conn.cursor()
