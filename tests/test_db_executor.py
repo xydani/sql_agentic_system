@@ -2,7 +2,7 @@ import sqlite3
 
 import pytest
 
-from db_executor import _skeleton, execute_sql, validate_read_only
+from sql_agent.db_executor import _skeleton, execute_sql, validate_read_only
 
 ACCEPTED = [
     "SELECT * FROM customers",
@@ -122,7 +122,7 @@ def test_write_refused_by_guard(db):
 
 
 def test_engine_blocks_write_even_if_guard_is_bypassed(db, monkeypatch):
-    monkeypatch.setattr("db_executor.validate_read_only", lambda sql: None)
+    monkeypatch.setattr("sql_agent.db_executor.validate_read_only", lambda sql: None)
     r = execute_sql(db, "DELETE FROM t")
     assert not r.success and "readonly" in r.error.lower()
     assert _count(db) == 10

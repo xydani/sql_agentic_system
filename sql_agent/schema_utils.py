@@ -72,5 +72,5 @@ def get_schema_description(db_path: str) -> str:
 
 if __name__ == "__main__":
     import sys
-    path = sys.argv[1] if len(sys.argv) > 1 else "example.db"
+    path = sys.argv[1] if len(sys.argv) > 1 else "data/example.db"
     print(get_schema_description(path))

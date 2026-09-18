@@ -2,7 +2,7 @@ import sqlite3
 
 import pytest
 
-from schema_utils import describe_single_table, get_schema_description, list_table_names
+from sql_agent.schema_utils import describe_single_table, get_schema_description, list_table_names
 
 
 @pytest.fixture
@@ -64,7 +64,7 @@ def test_full_schema_is_join_of_single_tables(db):
 
 
 def test_example_db_schema_unchanged():
-    assert get_schema_description("example.db") == (
+    assert get_schema_description("data/example.db") == (
         "TABLE customers\n"
         "  - id: INTEGER (PRIMARY KEY)\n"
         "  - name: TEXT (NOT NULL)\n"

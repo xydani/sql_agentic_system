@@ -17,11 +17,11 @@ Usage:
 
 import sys
 
-from db_executor import ExecutionResult, execute_sql
-from nl2sql_agent import NL2SQLAgent
-from schema_utils import get_schema_description
+from sql_agent.db_executor import ExecutionResult, execute_sql
+from legacy.nl2sql_agent import NL2SQLAgent
+from sql_agent.schema_utils import get_schema_description
 
-DB_PATH = "example.db"
+DB_PATH = "data/example.db"
 MAX_RETRIES = 4
 
 
