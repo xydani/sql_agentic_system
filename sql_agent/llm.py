@@ -17,7 +17,7 @@ load_dotenv()
 PROVIDERS = {
     "groq": {
         "backend": "groq",
-        "model": "openai/gpt-oss-120b",
+        "model": "qwen/qwen3.8-27b",
         "key": "GROQ_API_KEY",
         "console": "https://console.groq.com/keys",
     },
