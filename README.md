@@ -144,8 +144,12 @@ data/
   example.db            2 tables, 7 rows - the minimal demo case
   shop.db               4 tables, ~1500 rows - the realistic one
   generate_shop_db.py   rebuilds shop.db, seeded and deterministic
+docs/
+  dla2_report.pdf   the project report
+  src/              its Typst sources
 tests/
 main.py
+evaluation.py       measures how often each system answers correctly
 ```
 
 ## The two databases
@@ -203,6 +207,27 @@ a complete result and counted.
 python -m pytest tests/ -q
 ```
 
-113 tests, no API key needed. The graph is exercised with a scripted model, so
+127 tests, no API key needed. The graph is exercised with a scripted model, so
 approval, rejection, revision caps, thread isolation and SQL self-correction
 are all verified offline and deterministically.
+
+## Evaluation
+
+The tests say the machinery is correct. They say nothing about how often the
+agent gets the right answer, because that depends on a model that is not
+deterministic. `evaluation.py` measures it, by asking each question several
+times against both systems and comparing the answer with the value computed
+directly on the database:
+
+```bash
+python evaluation.py --repetitions 3
+```
+
+Answers come back as prose, so the check extracts the numbers from the text and
+normalises thousands and decimal separators rather than matching substrings,
+which would accept 120 for 20.
+
+On `shop.db`, over five questions repeated three times, the agent answered
+correctly 15 times out of 15 and the original pipeline 3 out of 15, both
+running the same model. The one question the old pipeline gets right is the
+only one that does not require knowing how values are written in a column.
